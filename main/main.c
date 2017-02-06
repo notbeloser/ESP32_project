@@ -45,13 +45,7 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 static const char *TAG = "example";
 /* Constants that aren't configurable in menuconfig */
-void eye(void *pvParameters);
-typedef struct eye_data {
-		int eye;
-		double r;
-		double  angle;
-		int change_time;
-}eye_d ;
+
 
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
@@ -130,20 +124,7 @@ void uart_test()
 
 
 
-void eye(void *s)
-{
-	int i;
-	int eye= ( (eye_d*)s)->eye;
-	double r=  ( (eye_d*)s)->r;
-	double  angle= ( (eye_d*)s)->angle;
-	int change_time = ((eye_d*)s)->change_time;
-	double x ,y;
-	x= r*cos(radians(angle)) +1100/0.8192;
-	y= r*sin(radians(angle)) +1100/0.8192;
-	ledcWrite(0,(int)(x*0.8192));
-	ledcWrite(1,(int)(y*0.8192));
-	vTaskDelete(NULL);
-}
+
 
 void app_main()
 {
