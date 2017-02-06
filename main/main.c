@@ -33,6 +33,9 @@
 #include "soc/ledc_struct.h"
 #include "soc/gpio_sig_map.h"
 
+#include "Arduino.h"
+#include "esp32-hal.h"
+
 #define EXAMPLE_WIFI_SSID "notbeloser"
 #define EXAMPLE_WIFI_PASS "gogogogo"
 #define true 1
@@ -297,44 +300,26 @@ void servo_setting(int bit,int hz,int speed_mode,int timer_num)
 
 }
 
-void mouth(int time,int delay)
-{
-			ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE,4,time,delay);
-			ledc_fade_start(4, LEDC_FADE_NO_WAIT);
-}
-void mouth_test()
-{
-	while(1)
-	{
-		mouth(500,100);
-		vTaskDelay(100/portTICK_PERIOD_MS);
-		mouth(1700,100);
-		vTaskDelay(100/portTICK_PERIOD_MS);
-	}
-}
-#define pi 3.1415
-void app_main()
+
+
+extern   void app_main()
 {
 	nvs_flash_init();
-	initialise_wifi();
+	//initialise_wifi();
+	//	i2cInit(0, 0x40, 0);
 	//xTaskCreate(&http_get_task, "http_get_task", 2048, NULL, 5, NULL);
-
-	//i2c_master_init();
-
-	servo_setting(13,100,LEDC_HIGH_SPEED_MODE,LEDC_TIMER_0);
-	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
+	//servo_setting(13,100,LEDC_HIGH_SPEED_MODE,LEDC_TIMER_0);
+	//xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
 	//xTaskCreate(&mouth_test, "mouth_test", 2048, NULL, 5, NULL);
+	ledcSetup(0, 200, 13);
+	ledcAttachPin(4 ,0);
+
 	while(1)
 	{
-		for(int a=0;a<360;a=a+15)
-		{
-			double angle=(double)a*pi/180;
-			eye(0,400, angle );
-			eye(1,400, 3*pi-angle);
-			vTaskDelay(100/portTICK_PERIOD_MS);
-		}
-
-
+		ledcWrite(0,819);
+		delay(1000);
+		ledcWrite(0,819*2);
+		delay(1000);
 	}
 
 }
