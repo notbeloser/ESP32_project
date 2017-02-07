@@ -18,6 +18,7 @@ typedef struct eye_data{
 		double r;//0
 		double  angle;//0
 		int change_time_ms;//100
+		int rev;
 }eye_d;
 
 typedef struct bow_data{
@@ -27,6 +28,7 @@ typedef struct bow_data{
 	int channel_angle_gpio;
 	double  angle,y;
 	int change_time_ms;
+	int rev;
 }bow_d;
 
 
@@ -35,6 +37,7 @@ typedef struct ear_data{
 	int channel_gpio;
 	double angle;
 	int change_time_ms;
+	int rev;
 }ear_d;
 
 typedef struct  mouth_data{

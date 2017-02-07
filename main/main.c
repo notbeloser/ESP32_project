@@ -115,7 +115,7 @@ void uart_test()
 				}
 				else if(sscanf(str,"%d\n",&time) == 1)
 				{
-					int duty = time*0.8911;
+					int duty = time*0.8192;
 					ESP_LOGI(TAG,"time = %d, duty = %d",time,duty);
 					ledcWrite(0,duty);
 				}
