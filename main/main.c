@@ -35,6 +35,7 @@
 
 #include "Arduino.h"
 #include "esp32-hal.h"
+#include "doll.h"
 
 #define EXAMPLE_WIFI_SSID "notbeloser"
 #define EXAMPLE_WIFI_PASS "gogogogo"
@@ -112,6 +113,12 @@ void uart_test()
 				{
 					ESP_LOGI(TAG,"Servo%d,time =%d",servo,time);
 				}
+				else if(sscanf(str,"%d\n",&time) == 1)
+				{
+					int duty = time*0.8911;
+					ESP_LOGI(TAG,"time = %d, duty = %d",time,duty);
+					ledcWrite(0,duty);
+				}
 				memset(str,0,sizeof(str));
 				i=0;
 			}
@@ -131,11 +138,8 @@ void app_main()
 	nvs_flash_init();
 	//initialise_wifi();
 	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
-	ledcSetup(0,200,13);
-	ledcSetup(1,200,13);
-	ledcAttachPin(4,0);
-	ledcAttachPin(16,1);
-
+	ledcSetup(0,100,13);
+	ledcAttachPin(16,0);
 
 
 	while(1)
