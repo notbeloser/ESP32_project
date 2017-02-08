@@ -1,8 +1,5 @@
-#include "Arduino.h"
-#include "stdio.h"
-#include "esp32-hal.h"
 #include "doll.h"
-#include "math.h"
+
 doll doll_default_setting(){
 	doll d;
 	d.l_eye.channel_x=0;
@@ -11,7 +8,7 @@ doll doll_default_setting(){
 	d.l_eye.channel_y_gpio=2;
 	d.l_eye.angle=0;
 	d.l_eye.r=0;
-	d.l_eye.change_time_ms=100;
+	d.l_eye.change_time_ms=300;
 	d.l_eye.rev=0;
 
 	d.r_eye.channel_x=2;
@@ -20,19 +17,19 @@ doll doll_default_setting(){
 	d.r_eye.channel_y_gpio=4;
 	d.r_eye.angle=0;
 	d.r_eye.r=0;
-	d.r_eye.change_time_ms=100;
+	d.r_eye.change_time_ms=300;
 	d.r_eye.rev=1;
 
 	d.l_ear.channel=4;
 	d.l_ear.channel_gpio=16;
 	d.l_ear.angle=0;
-	d.l_ear.change_time_ms=100;
+	d.l_ear.change_time_ms=300;
 	d.l_ear.rev=0;
 
 	d.r_ear.channel=5;
 	d.r_ear.channel_gpio=17;
 	d.r_ear.angle=0;
-	d.r_ear.change_time_ms=100;
+	d.r_ear.change_time_ms=300;
 	d.r_ear.rev=1;
 
 	d.l_bow.channel_angle=6;
@@ -40,7 +37,7 @@ doll doll_default_setting(){
 	d.l_bow.channel_y=7;
 	d.l_bow.channel_y_gpio=18;
 	d.l_bow.angle=0;
-	d.l_bow.change_time_ms=100;
+	d.l_bow.change_time_ms=300;
 	d.l_bow.rev=1;
 
 	d.r_bow.channel_angle=8;
@@ -48,11 +45,11 @@ doll doll_default_setting(){
 	d.r_bow.channel_y=9;
 	d.r_bow.channel_y_gpio=21;
 	d.r_bow.angle=0;
-	d.r_bow.change_time_ms=100;
+	d.r_bow.change_time_ms=300;
 	d.r_bow.rev=0;
 
 	d.mouth.angle=0;
-	d.mouth.change_time_ms=100;
+	d.mouth.change_time_ms=300;
 	d.mouth.channel=10;
 	d.mouth.channel_gpio=22;
 
@@ -67,26 +64,34 @@ void doll_init(doll d)
 	ear_init(d.r_ear);
 	bow_init(d.r_bow);
 	bow_init(d.l_bow);
+
+	eye_set(d.l_eye);
+	eye_set(d.r_eye);
+	mouth_set(d.mouth);
+	ear_set(d.l_ear);
+	ear_set(d.r_ear);
+	bow_set(d.r_bow);
+	bow_set(d.r_bow);
 }
 void eye_init(eye_d eye){
-	ledcSetup(eye.channel_x,200,13);
-	ledcSetup(eye.channel_y,200,13);
+	ledcSetup(eye.channel_x,100,13);
+	ledcSetup(eye.channel_y,100,13);
 	ledcAttachPin(eye.channel_x_gpio,eye.channel_x);
 	ledcAttachPin(eye.channel_y_gpio,eye.channel_y);
 }
 void mouth_init(mouth_d m)
 {
-	ledcSetup(m.channel,200,13);
+	ledcSetup(m.channel,100,13);
 	ledcAttachPin(m.channel_gpio,m.channel);
 }
 void ear_init(ear_d ear){
-	ledcSetup(ear.channel,200,13);
+	ledcSetup(ear.channel,100,13);
 	ledcAttachPin(ear.channel_gpio,ear.channel);
 }
 void bow_init(bow_d bow)
 {
-	ledcSetup(bow.channel_angle,200,13);
-	ledcSetup(bow.channel_y,200,13);
+	ledcSetup(bow.channel_angle,100,13);
+	ledcSetup(bow.channel_y,100,13);
 	ledcAttachPin(bow.channel_angle_gpio,bow.channel_angle);
 	ledcAttachPin(bow.channel_y_gpio,bow.channel_y);
 }
@@ -104,28 +109,110 @@ void eye_set(eye_d eye){
 	}
 	ledcWrite(eye.channel_y,(int)((2120-y)*0.8192));
 }
+static void eye_set_loop(eye_d* f){
+	double x,y,x_add,y_add,x_final,y_final;
+	int loop_time,i;
+	if( f->rev){
+	x_final=x=2120-ledcRead( f->channel_x ) / 0.8192;
+	}
+	else{
+		x_final=x=ledcRead( f->channel_x ) / 0.8192;
+	}
+	y_final=y=2120-ledcRead( f->channel_y ) / 0.8192;
+
+	loop_time = f->change_time_ms /20;
+
+	x_add=( f->r * cos(radians(((eye_d*)f)->angle))+1250 - x)/loop_time;
+	y_add=(f->r * sin(radians(((eye_d*)f)->angle))+1250 - y)/loop_time;
+
+	for(i=0;i<loop_time;i++){
+		x=x+x_add;
+		y=y+y_add;
+		if(((eye_d*)f)->rev){
+				ledcWrite(f->channel_x,(int)((2120-x)*0.8192) );
+			}
+			else{
+				ledcWrite(f->channel_x,(int)(x*0.8192) );
+			}
+			ledcWrite(f->channel_y,(int)((2120-y)*0.8192));
+			delay(20);
+	}
+	if(((eye_d*)f)->rev){
+		ledcWrite(f->channel_x,(int)((2120-x_final)*0.8192) );
+	}
+	else{
+		ledcWrite(f->channel_x,(int)(x_final*0.8192) );
+	}
+	ledcWrite(f->channel_y,(int)((2120-y_final)*0.8192));
+	vTaskDelete(NULL);
+}
+void eye_set_with_time(eye_d eye){
+	xTaskCreate(&eye_set_loop, "eye_set_loop", 2048,(void *)(&eye), 6, NULL);
+}
 
 void mouth_set(mouth_d m){
-	int duty = m.angle * 83 /9 *0.8192 + 750 / 0.8192;
+	int duty = (m.angle * 92 /9 + 750) * 0.8192;
 	ledcWrite(m.channel,duty);
 }
+static void mouth_set_loop(mouth_d *m){
+	double angle= ( ledcRead( m ->channel ) / 0.8192 -750)*9/92;
+	double angle_final = angle;
+	int loop_time = m->change_time_ms /20;
+	double angle_add = ( m -> angle -angle)/loop_time;
+
+	for(int i=0;i<loop_time;i++){
+		angle=angle+angle_add;
+		m->angle = angle;
+		mouth_set( *m );
+		delay(20);
+	}
+	m->angle = angle_final;
+	mouth_set(*m );
+	vTaskDelete(NULL);
+}
+void mouth_set_with_time(mouth_d m){
+	xTaskCreate(&mouth_set_loop, "mouth_set_loop", 2048, (void *)(&m), 6, NULL);
+}
+
 void ear_set(ear_d e){
 	int duty;
-	if(e.rev)
-	{
-		duty =  (2320 -  e.angle * 83 /9 +750)*0.8192;
+	if(e.rev){
+		duty =  (2320 -  (e.angle * 92 /9 +750) )*0.8192;
 	}
-	else
-	{
-		duty =  (2320-e.angle * 83 /9 +750)*0.8192;
+	else{
+		duty =  (e.angle * 92/9 +750)*0.8192;
 	}
 	ledcWrite(e.channel,duty);
 }
+static void ear_set_loop(ear_d* e){
+	double angle;
+	if(e->rev){
+		angle = (2320-ledcRead(e->channel)/0.8192-750)*9/92;
+	}
+	else{
+		angle = (ledcRead(e->channel)/0.8192 -750 )*9/92;
+	}
+	double angle_final = angle;
+	int loop_time = e->change_time_ms /20;
+	double angle_add = (e->angle - angle)/loop_time;
+	for(int i=0;i<loop_time;i++){
+		e->angle=angle=angle+angle_add;
+		ear_set(*e);
+		delay(20);
+	}
+	e->angle=angle_final;
+	ear_set(*e);
+	vTaskDelete(NULL);
+}
+void ear_set_with_time(ear_d e){
+	xTaskCreate(&ear_set_loop,"ear_set_loop",2048,(void*)(&e),6,NULL);
+}
+
 void bow_set(bow_d b){
 	const double l = 12.59;//length of servo stick
 	const double lowest_deg = 39;
-	const double bow_height_lowest = l*tan(radians(lowest_deg));
-	double height= b.y + bow_height_lowest;
+	const double low_height_lowest = l*tan(radians(lowest_deg));
+	double height= b.y +low_height_lowest;
 	double rad = atan2(height,l);
 	double angle_move = degrees(rad) - lowest_deg;
 	int duty;
@@ -139,5 +226,48 @@ void bow_set(bow_d b){
 	int angle_duty = (1430 + 92/9 * b.angle)*0.8192;
 	ledcWrite(b.channel_angle,angle_duty);
 }
+static void bow_set_loop(bow_d* b){
+	const double l = 12.59;//length of servo stick
+	const double lowest_deg = 39;
+	const double low_height_lowest = l*tan(radians(lowest_deg));
+
+	//height
+	double height_duty = ledcRead(b->channel_y);
+	double angle_move_old;
+	if(b->rev){
+		angle_move_old =(3070- height_duty/0.8192)*9/92;
+	}
+	else{
+		angle_move_old = (height_duty/0.8192-750)*9/92;
+	}
+	double height = l*tan(radians(angle_move_old + lowest_deg)) - low_height_lowest;
+	//--------angle-----------
+	double angle= (ledcRead(b->channel_angle)/0.8192 -1430)*9/92;
+	//---------------------------
+	double height_final,angle_final;
+	height_final=b->y;
+	angle_final = b->angle;
+	double height_add,angle_add;
+	int loop_time = b->change_time_ms /20;
+	height_add=(height_final - height) /loop_time;
+	angle_add = (angle_final - angle)/loop_time;
+	for(int i =0 ;i<loop_time;i++){
+		height=height+height_add;
+		angle = angle+angle_add;
+		b->y = height;
+		b->angle = angle;
+		bow_set(*b);
+		delay(20);
+	}
+	b->y=height_final;
+	b->angle = angle_final;
+	bow_set(*b);
+	vTaskDelete(NULL);
+}
+void bow_set_with_time(bow_d b){
+	xTaskCreate(&bow_set_loop,"bow_set_loop",2048,(void*)(&b),6,NULL);
+}
+
+
 
 

@@ -1,5 +1,3 @@
-#include "Arduino.h"
-#include "esp32-hal.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -10,14 +8,43 @@
 #include "freertos/queue.h"
 #include "freertos/portmacro.h"
 
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+#include "esp_attr.h"
+#include "esp_err.h"
+#include "nvs_flash.h"
+#include "driver/ledc.h"
+#include "driver/pcnt.h"
+#include "driver/gpio.h"
+#include "driver/periph_ctrl.h"
+
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/dns.h"
+
+#include "rom/uart.h"
+#include "driver/i2c.h"
+#include "soc/soc.h"
+#include "soc/ledc_reg.h"
+#include "soc/ledc_struct.h"
+#include "soc/gpio_sig_map.h"
+
+#include "Arduino.h"
+#include "esp32-hal.h"
+
+
 typedef struct eye_data{
-		int channel_y;//1
-		int channel_y_gpio;//2
-		int channel_x;//0
-		int channel_x_gpio;//15
-		double r;//0
-		double  angle;//0
-		int change_time_ms;//100
+		int channel_y;
+		int channel_y_gpio;
+		int channel_x;
+		int channel_x_gpio;
+		double r;
+		double  angle;
+		int change_time_ms;
 		int rev;
 }eye_d;
 
@@ -68,3 +95,8 @@ void eye_set(eye_d);
 void mouth_set(mouth_d);
 void ear_set(ear_d);
 void bow_set(bow_d);
+
+void eye_set_with_time(eye_d);
+void mouth_set_with_time(mouth_d);
+void ear_set_with_time(ear_d);
+void bow_set_with_time(bow_d);

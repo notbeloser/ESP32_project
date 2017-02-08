@@ -42,7 +42,7 @@
 #define true 1
 #define false 0
 static EventGroupHandle_t wifi_event_group;
-
+doll d;
 const int CONNECTED_BIT = BIT0;
 static const char *TAG = "example";
 /* Constants that aren't configurable in menuconfig */
@@ -137,10 +137,11 @@ void app_main()
 {
 	nvs_flash_init();
 	//initialise_wifi();
-	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
-	ledcSetup(0,100,13);
-	ledcAttachPin(16,0);
-
+//	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
+//	ledcSetup(0,100,13);
+//	ledcAttachPin(16,0);
+	d=doll_default_setting();
+	doll_init(d);
 
 	while(1)
 	{
