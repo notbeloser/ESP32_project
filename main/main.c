@@ -46,9 +46,7 @@ doll d;
 const int CONNECTED_BIT = BIT0;
 static const char *TAG = "example";
 /* Constants that aren't configurable in menuconfig */
-
-
-
+hw_timer_t* timer;
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -93,31 +91,22 @@ static void initialise_wifi(void)
 }
 
 
-void uart_test()
-{
+void uart_test(){
 	char temp,str[20];
 	int i=0;
 	int servo=0,time=1024;
-	while(1)
-	{
+	while(1){
 		scanf("%c",&temp);
-		if(temp!=0)
-		{
+		if(temp!=0){
 			printf("%c",temp);
 			str[i]=temp;
 			i++;
 			fflush(stdout);
-			if(temp=='\n')
-			{
-				if(sscanf(str,"%d %d\n",&servo,&time) == 2)
-				{
-					ESP_LOGI(TAG,"Servo%d,time =%d",servo,time);
-				}
-				else if(sscanf(str,"%d\n",&time) == 1)
-				{
-					int duty = time*0.8192;
-					ESP_LOGI(TAG,"time = %d, duty = %d",time,duty);
-					ledcWrite(0,duty);
+			if(temp=='\n'){
+				if(sscanf(str,"%d %d\n",&servo,&time) == 2){
+					ESP_LOGI(TAG,"Servo%d,time =%d",servo,(int)(time*0.8192));
+					ledcWrite(servo,(int)(time*0.8192));
+
 				}
 				memset(str,0,sizeof(str));
 				i=0;
@@ -129,22 +118,30 @@ void uart_test()
 	vTaskDelete(NULL);
 }
 
+volatile extern void timer_ISR(doll a){
 
-
-
-
+}
+void timer_setting(){
+	timer = timerBegin(2 ,timer_divider, 1);
+	printf("timer count %d\n",timer_count);
+	timerAlarmWrite(timer,timer_count, true);
+	timerSetAutoReload(timer, true);
+	timerAlarmEnable(timer);
+	timerAttachInterrupt(timer, timer_ISR, true);
+	timerStop(timer);
+	timerWrite(timer,0);
+	timerStart(timer);
+}
 void app_main()
 {
 	nvs_flash_init();
 	//initialise_wifi();
-//	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
-//	ledcSetup(0,100,13);
-//	ledcAttachPin(16,0);
+	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
 	d=doll_default_setting();
 	doll_init(d);
+	timer_setting();
 
-	while(1)
-	{
+	while(1){
 
 	}
 

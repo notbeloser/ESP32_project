@@ -24,19 +24,20 @@ doll doll_default_setting(){
 	d.l_ear.channel_gpio=16;
 	d.l_ear.angle=0;
 	d.l_ear.change_time_ms=300;
-	d.l_ear.rev=0;
+	d.l_ear.rev=1;
 
 	d.r_ear.channel=5;
 	d.r_ear.channel_gpio=17;
 	d.r_ear.angle=0;
 	d.r_ear.change_time_ms=300;
-	d.r_ear.rev=1;
+	d.r_ear.rev=0;
 
 	d.l_bow.channel_angle=6;
 	d.l_bow.channel_angle_gpio=5;
 	d.l_bow.channel_y=7;
 	d.l_bow.channel_y_gpio=18;
 	d.l_bow.angle=0;
+	d.l_bow.y=0;
 	d.l_bow.change_time_ms=300;
 	d.l_bow.rev=1;
 
@@ -45,6 +46,7 @@ doll doll_default_setting(){
 	d.r_bow.channel_y=9;
 	d.r_bow.channel_y_gpio=21;
 	d.r_bow.angle=0;
+	d.r_bow.y=0;
 	d.r_bow.change_time_ms=300;
 	d.r_bow.rev=0;
 
@@ -71,7 +73,16 @@ void doll_init(doll d)
 	ear_set(d.l_ear);
 	ear_set(d.r_ear);
 	bow_set(d.r_bow);
+	bow_set(d.l_bow);
+}
+void doll_set(doll d){
+	eye_set(d.l_eye);
+	eye_set(d.r_eye);
+	mouth_set(d.mouth);
+	ear_set(d.l_ear);
+	ear_set(d.r_ear);
 	bow_set(d.r_bow);
+	bow_set(d.l_bow);
 }
 void eye_init(eye_d eye){
 	ledcSetup(eye.channel_x,100,13);
@@ -98,52 +109,48 @@ void bow_init(bow_d bow)
 
 void eye_set(eye_d eye){
 	double x,y;
-	x=eye.r*cos(radians(eye.angle))+1250;
-	y=eye.r*sin(radians(eye.angle))+1250;
+
+	y=-eye.r*sin(radians(eye.angle))+eye_center;
 	if(eye.rev){
-		ledcWrite(eye.channel_x,(int)((2120-x)*0.8192) );
+		x=-eye.r*cos(radians(eye.angle))+eye_center;
 	}
-	else
-	{
-		ledcWrite(eye.channel_x,(int)(x*0.8192) );
+	else{
+		x=eye.r*cos(radians(eye.angle))+eye_center;
 	}
-	ledcWrite(eye.channel_y,(int)((2120-y)*0.8192));
+	ledcWrite(eye.channel_y,(int)(y*0.8192));
+	ledcWrite(eye.channel_x,(int)(x*0.8192));
 }
 static void eye_set_loop(eye_d* f){
-	double x,y,x_add,y_add,x_final,y_final;
-	int loop_time,i;
-	if( f->rev){
-	x_final=x=2120-ledcRead( f->channel_x ) / 0.8192;
+	double x,y,r,angle;
+	x=ledcRead(f->channel_x)/0.8192;
+	y=ledcRead(f->channel_y)/0.8192;
+	if(f->rev){
+		r=sqrt(  pow(eye_center-x,2) + pow(eye_center-y,2 ) );
+		angle =  degrees(acos((eye_center-x)/r));
 	}
 	else{
-		x_final=x=ledcRead( f->channel_x ) / 0.8192;
+		r=sqrt(  pow(x-eye_center,2) + pow(eye_center-y,2 ) );
+		angle =  degrees(acos((x-eye_center)/r));
 	}
-	y_final=y=2120-ledcRead( f->channel_y ) / 0.8192;
 
-	loop_time = f->change_time_ms /20;
+	double r_final,angle_final;
+	int loop_time;
+	loop_time =f->change_time_ms / delay_time;
+	r_final = f->r;
+	angle_final = f->angle;
+	double r_add,angle_add;
+	r_add=(r_final-r)/loop_time;
+	angle_add= (angle_final-angle)/loop_time;
 
-	x_add=( f->r * cos(radians(((eye_d*)f)->angle))+1250 - x)/loop_time;
-	y_add=(f->r * sin(radians(((eye_d*)f)->angle))+1250 - y)/loop_time;
-
-	for(i=0;i<loop_time;i++){
-		x=x+x_add;
-		y=y+y_add;
-		if(((eye_d*)f)->rev){
-				ledcWrite(f->channel_x,(int)((2120-x)*0.8192) );
-			}
-			else{
-				ledcWrite(f->channel_x,(int)(x*0.8192) );
-			}
-			ledcWrite(f->channel_y,(int)((2120-y)*0.8192));
-			delay(20);
+	for(int i=0;i<loop_time;i++){
+		f->r=r=r+r_add;
+		f->angle=angle = angle+angle_add;
+		eye_set(*f);
+		delay(delay_time);
 	}
-	if(((eye_d*)f)->rev){
-		ledcWrite(f->channel_x,(int)((2120-x_final)*0.8192) );
-	}
-	else{
-		ledcWrite(f->channel_x,(int)(x_final*0.8192) );
-	}
-	ledcWrite(f->channel_y,(int)((2120-y_final)*0.8192));
+	f->r = r_final;
+	f->angle = angle_final;
+	eye_set(*f);
 	vTaskDelete(NULL);
 }
 void eye_set_with_time(eye_d eye){
@@ -151,20 +158,20 @@ void eye_set_with_time(eye_d eye){
 }
 
 void mouth_set(mouth_d m){
-	int duty = (m.angle * 92 /9 + 750) * 0.8192;
+	int duty = (servo_max-m.angle * 92 /9)* 0.8192;
 	ledcWrite(m.channel,duty);
 }
 static void mouth_set_loop(mouth_d *m){
-	double angle= ( ledcRead( m ->channel ) / 0.8192 -750)*9/92;
+	double angle= (servo_max - ledcRead(m->channel )/ 0.8192)*9/92;
 	double angle_final = angle;
-	int loop_time = m->change_time_ms /20;
+	int loop_time = m->change_time_ms /delay_time;
 	double angle_add = ( m -> angle -angle)/loop_time;
 
 	for(int i=0;i<loop_time;i++){
 		angle=angle+angle_add;
 		m->angle = angle;
 		mouth_set( *m );
-		delay(20);
+		delay(delay_time);
 	}
 	m->angle = angle_final;
 	mouth_set(*m );
@@ -177,7 +184,7 @@ void mouth_set_with_time(mouth_d m){
 void ear_set(ear_d e){
 	int duty;
 	if(e.rev){
-		duty =  (2320 -  (e.angle * 92 /9 +750) )*0.8192;
+		duty =  (servo_max -  (e.angle * 92 /9 +750) )*0.8192;
 	}
 	else{
 		duty =  (e.angle * 92/9 +750)*0.8192;
@@ -187,18 +194,18 @@ void ear_set(ear_d e){
 static void ear_set_loop(ear_d* e){
 	double angle;
 	if(e->rev){
-		angle = (2320-ledcRead(e->channel)/0.8192-750)*9/92;
+		angle = (servo_max-ledcRead(e->channel)/0.8192-750)*9/92;
 	}
 	else{
 		angle = (ledcRead(e->channel)/0.8192 -750 )*9/92;
 	}
 	double angle_final = angle;
-	int loop_time = e->change_time_ms /20;
+	int loop_time = e->change_time_ms /delay_time;
 	double angle_add = (e->angle - angle)/loop_time;
 	for(int i=0;i<loop_time;i++){
 		e->angle=angle=angle+angle_add;
 		ear_set(*e);
-		delay(20);
+		delay(delay_time);
 	}
 	e->angle=angle_final;
 	ear_set(*e);
@@ -217,10 +224,10 @@ void bow_set(bow_d b){
 	double angle_move = degrees(rad) - lowest_deg;
 	int duty;
 	if(b.rev){
-		duty = (2320 - 92/9 * angle_move + 750) * 0.8192;
+		duty = (servo_max - 92/9 * angle_move) * 0.8192;
 	}
 	else{
-		duty = (92/9 * angle_move + 750) * 0.8192;
+		duty = (92/9 * angle_move + servo_min) * 0.8192;
 	}
 	ledcWrite(b.channel_y,duty);
 	int angle_duty = (1430 + 92/9 * b.angle)*0.8192;
@@ -248,7 +255,7 @@ static void bow_set_loop(bow_d* b){
 	height_final=b->y;
 	angle_final = b->angle;
 	double height_add,angle_add;
-	int loop_time = b->change_time_ms /20;
+	int loop_time = b->change_time_ms /delay_time;
 	height_add=(height_final - height) /loop_time;
 	angle_add = (angle_final - angle)/loop_time;
 	for(int i =0 ;i<loop_time;i++){
@@ -257,7 +264,7 @@ static void bow_set_loop(bow_d* b){
 		b->y = height;
 		b->angle = angle;
 		bow_set(*b);
-		delay(20);
+		delay(delay_time);
 	}
 	b->y=height_final;
 	b->angle = angle_final;

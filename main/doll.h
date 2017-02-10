@@ -36,7 +36,12 @@
 #include "Arduino.h"
 #include "esp32-hal.h"
 
-
+#define eye_center 1350
+#define servo_min 750
+#define servo_max 2100
+#define delay_time 20
+#define timer_divider 80
+#define timer_count 80000000/timer_divider*delay_time/1000
 typedef struct eye_data{
 		int channel_y;
 		int channel_y_gpio;
@@ -86,14 +91,15 @@ typedef struct doll_data{
 
 doll doll_default_setting();
 void doll_init(doll);
+void doll_set(doll);
 void eye_init(eye_d);
 void mouth_init(mouth_d);
 void ear_init(ear_d);
 void bow_init(bow_d);
 
 void eye_set(eye_d);
-void mouth_set(mouth_d);
-void ear_set(ear_d);
+void mouth_set(mouth_d);//max 21.2 deg
+void ear_set(ear_d); // max 71.4 deg
 void bow_set(bow_d);
 
 void eye_set_with_time(eye_d);
