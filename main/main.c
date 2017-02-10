@@ -94,7 +94,8 @@ static void initialise_wifi(void)
 void uart_test(){
 	char temp,str[20];
 	int i=0;
-	int servo=0,time=1024;
+	double time;
+	int servo=0;
 	while(1){
 		scanf("%c",&temp);
 		if(temp!=0){
@@ -103,10 +104,45 @@ void uart_test(){
 			i++;
 			fflush(stdout);
 			if(temp=='\n'){
-				if(sscanf(str,"%d %d\n",&servo,&time) == 2){
-					ESP_LOGI(TAG,"Servo%d,time =%d",servo,(int)(time*0.8192));
-					ledcWrite(servo,(int)(time*0.8192));
-
+				if(sscanf(str,"%d %lf\n",&servo,&time) == 2){
+					ESP_LOGI(TAG,"Servo%d,time =%lf",servo,time);
+//					ledcWrite(servo,(int)(time*0.8192));
+					switch(servo){
+					case 0:
+						d.l_eye.r=time;
+						break;
+					case 1:
+						d.l_eye.angle=time;
+						break;
+					case 2:
+						d.r_eye.r=time;
+						break;
+					case 3:
+						d.r_eye.angle=time;
+						break;
+					case 4:
+						d.l_ear.angle=time;
+						break;
+					case 5:
+						d.r_ear.angle=time;
+						break;
+					case 6:
+						d.l_bow.angle=time;
+						break;
+					case 7:
+						d.l_bow.y=time;
+						break;
+					case 8:
+						d.r_bow.angle=time;
+						break;
+					case 9:
+						d.r_bow.y=time;
+						break;
+					case 10:
+						d.mouth.angle=time;
+						break;
+					}
+					doll_set(d);
 				}
 				memset(str,0,sizeof(str));
 				i=0;
@@ -118,7 +154,39 @@ void uart_test(){
 	vTaskDelete(NULL);
 }
 
-volatile extern void timer_ISR(doll a){
+volatile extern void timer_ISR(){
+	if(d.l_bow.loop_time>0){
+		ledcWrite(d.l_bow.channel_angle,ledcRead(d.l_bow.channel_angle) + d.l_bow.angle_add);
+		ledcWrite(d.l_bow.channel_y,ledcRead(d.l_bow.channel_y) + d.l_bow.y_add);
+		d.l_bow.loop_time --;
+	}
+	if(d.r_bow.loop_time>0){
+		ledcWrite(d.r_bow.channel_angle,ledcRead(d.r_bow.channel_angle) + d.r_bow.angle_add);
+		ledcWrite(d.r_bow.channel_y,ledcRead(d.r_bow.channel_y) + d.r_bow.y_add);
+		d.r_bow.loop_time --;
+	}
+	if(d.l_eye.loop_time>0){
+		ledcWrite(d.l_eye.channel_x,ledcRead(d.l_eye.channel_x)+d.l_eye.x_add);
+		ledcWrite(d.l_eye.channel_y,ledcRead(d.l_eye.channel_y)+d.l_eye.y_add);
+		d.l_eye.loop_time--;
+	}
+	if(d.r_eye.loop_time>0){
+		ledcWrite(d.r_eye.channel_x,ledcRead(d.r_eye.channel_x)+d.r_eye.x_add);
+		ledcWrite(d.r_eye.channel_y,ledcRead(d.r_eye.channel_y)+d.r_eye.y_add);
+		d.r_eye.loop_time--;
+	}
+	if(d.l_ear.loop_time>0){
+		ledcWrite(d.l_ear.channel,ledcRead(d.l_ear.channel)+d.l_ear.duty_add);
+		d.l_ear.loop_time--;
+	}
+	if(d.r_ear.loop_time>0){
+		ledcWrite(d.r_ear.channel,ledcRead(d.r_ear.channel)+d.r_ear.duty_add);
+		d.r_ear.loop_time--;
+	}
+	if(d.mouth.loop_time>0){
+		ledcWrite(d.mouth.channel,ledcRead(d.mouth.channel) + d.mouth.duty_add);
+		d.mouth.loop_time--;
+	}
 
 }
 void timer_setting(){
@@ -142,7 +210,12 @@ void app_main()
 	timer_setting();
 
 	while(1){
-
+		for(double a=0;a<360;a+=10){
+			d.r_eye.r=d.l_eye.r=400;
+			d.r_eye.angle=d.l_eye.angle = a;
+			doll_set(d);
+			delay(20);
+		}
 	}
 
 }

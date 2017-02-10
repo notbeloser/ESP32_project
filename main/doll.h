@@ -47,10 +47,12 @@ typedef struct eye_data{
 		int channel_y_gpio;
 		int channel_x;
 		int channel_x_gpio;
+		double x_add,y_add;
 		double r;
 		double  angle;
 		int change_time_ms;
 		int rev;
+		int loop_time;
 }eye_d;
 
 typedef struct bow_data{
@@ -58,18 +60,20 @@ typedef struct bow_data{
 	int channel_y_gpio;
 	int channel_angle;
 	int channel_angle_gpio;
-	double  angle,y;
+	double  angle,y,angle_add,y_add;
 	int change_time_ms;
 	int rev;
+	int loop_time;
 }bow_d;
 
 
 typedef struct ear_data{
 	int channel;
 	int channel_gpio;
-	double angle;
+	double angle,duty_add;
 	int change_time_ms;
 	int rev;
+	int loop_time;
 }ear_d;
 
 typedef struct  mouth_data{
@@ -77,6 +81,9 @@ typedef struct  mouth_data{
 	int channel_gpio;
 	double angle;
 	int change_time_ms;
+	double duty_add;
+	int loop_time;
+
 }mouth_d;
 
 typedef struct doll_data{
@@ -102,7 +109,7 @@ void mouth_set(mouth_d);//max 21.2 deg
 void ear_set(ear_d); // max 71.4 deg
 void bow_set(bow_d);
 
-void eye_set_with_time(eye_d);
-void mouth_set_with_time(mouth_d);
-void ear_set_with_time(ear_d);
-void bow_set_with_time(bow_d);
+void eye_set_with_time(eye_d*);
+void mouth_set_with_time(mouth_d*);
+void ear_set_with_time(ear_d*);
+void bow_set_with_time(bow_d*);
