@@ -109,6 +109,7 @@ void mouth_set(mouth_d);//max 21.2 deg
 void ear_set(ear_d); // max 71.4 deg
 void bow_set(bow_d);
 
+void doll_set_with_time(doll*);
 void eye_set_with_time(eye_d*);
 void mouth_set_with_time(mouth_d*);
 void ear_set_with_time(ear_d*);

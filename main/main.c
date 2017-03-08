@@ -36,7 +36,6 @@
 #include "Arduino.h"
 #include "esp32-hal.h"
 #include "doll.h"
-
 #define EXAMPLE_WIFI_SSID "notbeloser"
 #define EXAMPLE_WIFI_PASS "gogogogo"
 #define true 1
@@ -47,6 +46,10 @@ const int CONNECTED_BIT = BIT0;
 static const char *TAG = "example";
 /* Constants that aren't configurable in menuconfig */
 hw_timer_t* timer;
+uart_t* uart;
+char c[200];
+int flag=0;
+int adc[7];
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -153,40 +156,78 @@ void uart_test(){
 	}
 	vTaskDelete(NULL);
 }
-
+#define adc_eye_x 35
+#define adc_eye_y 32
+#define adc_bow_angle 33
+#define adc_bow_y 25
+#define adc_left_ear 26
+#define adc_right_ear 27
+#define sw_mouth 14
 volatile extern void timer_ISR(){
-	if(d.l_bow.loop_time>0){
-		ledcWrite(d.l_bow.channel_angle,ledcRead(d.l_bow.channel_angle) + d.l_bow.angle_add);
-		ledcWrite(d.l_bow.channel_y,ledcRead(d.l_bow.channel_y) + d.l_bow.y_add);
-		d.l_bow.loop_time --;
-	}
-	if(d.r_bow.loop_time>0){
-		ledcWrite(d.r_bow.channel_angle,ledcRead(d.r_bow.channel_angle) + d.r_bow.angle_add);
-		ledcWrite(d.r_bow.channel_y,ledcRead(d.r_bow.channel_y) + d.r_bow.y_add);
-		d.r_bow.loop_time --;
-	}
-	if(d.l_eye.loop_time>0){
-		ledcWrite(d.l_eye.channel_x,ledcRead(d.l_eye.channel_x)+d.l_eye.x_add);
-		ledcWrite(d.l_eye.channel_y,ledcRead(d.l_eye.channel_y)+d.l_eye.y_add);
-		d.l_eye.loop_time--;
-	}
-	if(d.r_eye.loop_time>0){
-		ledcWrite(d.r_eye.channel_x,ledcRead(d.r_eye.channel_x)+d.r_eye.x_add);
-		ledcWrite(d.r_eye.channel_y,ledcRead(d.r_eye.channel_y)+d.r_eye.y_add);
-		d.r_eye.loop_time--;
-	}
-	if(d.l_ear.loop_time>0){
-		ledcWrite(d.l_ear.channel,ledcRead(d.l_ear.channel)+d.l_ear.duty_add);
-		d.l_ear.loop_time--;
-	}
-	if(d.r_ear.loop_time>0){
-		ledcWrite(d.r_ear.channel,ledcRead(d.r_ear.channel)+d.r_ear.duty_add);
-		d.r_ear.loop_time--;
-	}
-	if(d.mouth.loop_time>0){
-		ledcWrite(d.mouth.channel,ledcRead(d.mouth.channel) + d.mouth.duty_add);
-		d.mouth.loop_time--;
-	}
+//	if(d.l_bow.loop_time>0){
+//		ledcWrite(d.l_bow.channel_angle,ledcRead(d.l_bow.channel_angle) + d.l_bow.angle_add);
+//		ledcWrite(d.l_bow.channel_y,ledcRead(d.l_bow.channel_y) + d.l_bow.y_add);
+//		d.l_bow.loop_time --;
+//	}
+//	if(d.r_bow.loop_time>0){
+//		ledcWrite(d.r_bow.channel_angle,ledcRead(d.r_bow.channel_angle) + d.r_bow.angle_add);
+//		ledcWrite(d.r_bow.channel_y,ledcRead(d.r_bow.channel_y) + d.r_bow.y_add);
+//		d.r_bow.loop_time --;
+//	}
+//	if(d.l_eye.loop_time>0){
+//		ledcWrite(d.l_eye.channel_x,ledcRead(d.l_eye.channel_x)+d.l_eye.x_add);
+//		ledcWrite(d.l_eye.channel_y,ledcRead(d.l_eye.channel_y)+d.l_eye.y_add);
+//		d.l_eye.loop_time--;
+//	}
+//	if(d.r_eye.loop_time>0){
+//		ledcWrite(d.r_eye.channel_x,ledcRead(d.r_eye.channel_x)+d.r_eye.x_add);
+//		ledcWrite(d.r_eye.channel_y,ledcRead(d.r_eye.channel_y)+d.r_eye.y_add);
+//		d.r_eye.loop_time--;
+//	}
+//	if(d.l_ear.loop_time>0){
+//		ledcWrite(d.l_ear.channel,ledcRead(d.l_ear.channel)+d.l_ear.duty_add);
+//		d.l_ear.loop_time--;
+//	}
+//	if(d.r_ear.loop_time>0){
+//		ledcWrite(d.r_ear.channel,ledcRead(d.r_ear.channel)+d.r_ear.duty_add);
+//		d.r_ear.loop_time--;
+//	}
+//	if(d.mouth.loop_time>0){
+//		ledcWrite(d.mouth.channel,ledcRead(d.mouth.channel) + d.mouth.duty_add);
+//		d.mouth.loop_time--;
+//	}
+	//	if(d.l_bow.loop_time>0){
+	//		ledcWrite(d.l_bow.channel_angle,ledcRead(d.l_bow.channel_angle) + d.l_bow.angle_add);
+	//		ledcWrite(d.l_bow.channel_y,ledcRead(d.l_bow.channel_y) + d.l_bow.y_add);
+	//		d.l_bow.loop_time --;
+	//	}
+	//	if(d.r_bow.loop_time>0){
+	//		ledcWrite(d.r_bow.channel_angle,ledcRead(d.r_bow.channel_angle) + d.r_bow.angle_add);
+	//		ledcWrite(d.r_bow.channel_y,ledcRead(d.r_bow.channel_y) + d.r_bow.y_add);
+	//		d.r_bow.loop_time --;
+	//	}
+	//	if(d.l_eye.loop_time>0){
+	//		ledcWrite(d.l_eye.channel_x,ledcRead(d.l_eye.channel_x)+d.l_eye.x_add);
+	//		ledcWrite(d.l_eye.channel_y,ledcRead(d.l_eye.channel_y)+d.l_eye.y_add);
+	//		d.l_eye.loop_time--;
+	//	}
+	//	if(d.r_eye.loop_time>0){
+	//		ledcWrite(d.r_eye.channel_x,ledcRead(d.r_eye.channel_x)+d.r_eye.x_add);
+	//		ledcWrite(d.r_eye.channel_y,ledcRead(d.r_eye.channel_y)+d.r_eye.y_add);
+	//		d.r_eye.loop_time--;
+	//	}
+	//	if(d.l_ear.loop_time>0){
+	//		ledcWrite(d.l_ear.channel,ledcRead(d.l_ear.channel)+d.l_ear.duty_add);
+	//		d.l_ear.loop_time--;
+	//	}
+	//	if(d.r_ear.loop_time>0){
+	//		ledcWrite(d.r_ear.channel,ledcRead(d.r_ear.channel)+d.r_ear.duty_add);
+	//		d.r_ear.loop_time--;
+	//	}
+	//	if(d.mouth.loop_time>0){
+	//		ledcWrite(d.mouth.channel,ledcRead(d.mouth.channel) + d.mouth.duty_add);
+	//		d.mouth.loop_time--;
+	//	}
 
 }
 void timer_setting(){
@@ -200,22 +241,52 @@ void timer_setting(){
 	timerWrite(timer,0);
 	timerStart(timer);
 }
+
 void app_main()
 {
+//	pinMode(sw_mouth,INPUT_PULLUP);
+//	analogSetCycles(255);
+//	analogSetClockDiv(255);
 	nvs_flash_init();
 	//initialise_wifi();
 	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
 	d=doll_default_setting();
 	doll_init(d);
-	timer_setting();
-
+	//timer_setting();
+	uart=uartBegin(1, 9600, SERIAL_8N1, 23,34, 2048, 0);
 	while(1){
-		for(double a=0;a<360;a+=10){
-			d.r_eye.r=d.l_eye.r=400;
-			d.r_eye.angle=d.l_eye.angle = a;
-			doll_set(d);
-			delay(20);
+		while(uartAvailable(uart)>0)
+		{
+			c[flag]=uartRead(uart);
+			flag++;
 		}
+		if(sscanf(c,"%d,%d,%d,%d,%d,%d,%d\n",&adc[0],&adc[1],&adc[2],&adc[3],&adc[4],&adc[5],&adc[6] ) == 7){
+			for(int i=0;i<7;i++)
+				printf("%d,",adc[i]);
+			printf("\n");
+			double bow_angle,bow_y,eye_x,eye_y,ear_l,ear_r,mouth;
+			bow_angle=((double)adc[0]-512)/512*45;
+			bow_y=((double)adc[1]/1024)*30;
+			eye_x=((double)adc[2]-511)/1.4;
+			eye_y=((double)adc[3]-511)/1.4;
+			ear_r=(1023-(double)adc[4])/1024*60;
+			ear_l=(1023-(double)adc[5])/1024*60;
+			mouth=adc[6]*30-2;
+
+			double eye_r = sqrt(pow(eye_x,2) + pow(eye_y,2) );
+			double eye_angle=degrees(atan2(eye_y+0.001,eye_x+0.001));
+			d.l_eye.r = d.r_eye.r = -eye_r;
+			d.l_eye.angle  = -eye_angle;
+			d.r_eye.angle = -eye_angle;
+			d.l_ear.angle = ear_l;
+			d.r_ear.angle = ear_r;
+			d.l_bow.angle =-bow_angle;
+			d.r_bow.angle=bow_angle;
+			d.l_bow.y=d.r_bow.y=bow_y;
+			d.mouth.angle=mouth;
+			doll_set(d);
+		}
+		flag=0;
 	}
 
 }

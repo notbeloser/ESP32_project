@@ -84,6 +84,15 @@ void doll_set(doll d){
 	bow_set(d.r_bow);
 	bow_set(d.l_bow);
 }
+void doll_set_with_time(doll* d){
+	eye_set_with_time( &(d->l_eye) );
+	eye_set_with_time( &(d->r_eye) );
+	mouth_set_with_time(&(d->mouth));
+	ear_set_with_time(&(d->l_ear));
+	ear_set_with_time(&(d->r_ear));
+	bow_set_with_time(&(d->r_bow));
+	bow_set_with_time(&(d->l_bow));
+}
 void eye_init(eye_d eye){
 	ledcSetup(eye.channel_x,100,13);
 	ledcSetup(eye.channel_y,100,13);
