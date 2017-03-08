@@ -249,11 +249,11 @@ void app_main()
 //	analogSetClockDiv(255);
 	nvs_flash_init();
 	//initialise_wifi();
-	xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
+	//xTaskCreate(&uart_test, "uart_test", 2048, NULL, 6, NULL);
 	d=doll_default_setting();
 	doll_init(d);
 	//timer_setting();
-	uart=uartBegin(1, 9600, SERIAL_8N1, 23,34, 2048, 0);
+	uart=uartBegin(1, 31250, SERIAL_8N1, 23,34, 2048, 0);
 	while(1){
 		while(uartAvailable(uart)>0)
 		{
