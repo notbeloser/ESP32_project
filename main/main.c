@@ -93,69 +93,69 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
-
-void uart_test(){
-	char temp,str[20];
-	int i=0;
-	double time;
-	int servo=0;
-	while(1){
-		scanf("%c",&temp);
-		if(temp!=0){
-			printf("%c",temp);
-			str[i]=temp;
-			i++;
-			fflush(stdout);
-			if(temp=='\n'){
-				if(sscanf(str,"%d %lf\n",&servo,&time) == 2){
-					ESP_LOGI(TAG,"Servo%d,time =%lf",servo,time);
-//					ledcWrite(servo,(int)(time*0.8192));
-					switch(servo){
-					case 0:
-						d.l_eye.r=time;
-						break;
-					case 1:
-						d.l_eye.angle=time;
-						break;
-					case 2:
-						d.r_eye.r=time;
-						break;
-					case 3:
-						d.r_eye.angle=time;
-						break;
-					case 4:
-						d.l_ear.angle=time;
-						break;
-					case 5:
-						d.r_ear.angle=time;
-						break;
-					case 6:
-						d.l_bow.angle=time;
-						break;
-					case 7:
-						d.l_bow.y=time;
-						break;
-					case 8:
-						d.r_bow.angle=time;
-						break;
-					case 9:
-						d.r_bow.y=time;
-						break;
-					case 10:
-						d.mouth.angle=time;
-						break;
-					}
-					doll_set(d);
-				}
-				memset(str,0,sizeof(str));
-				i=0;
-			}
-		}
-		vTaskDelay(10 / portTICK_PERIOD_MS);
-		temp=0;
-	}
-	vTaskDelete(NULL);
-}
+//
+//void uart_test(){
+//	char temp,str[20];
+//	int i=0;
+//	double time;
+//	int servo=0;
+//	while(1){
+//		scanf("%c",&temp);
+//		if(temp!=0){
+//			printf("%c",temp);
+//			str[i]=temp;
+//			i++;
+//			fflush(stdout);
+//			if(temp=='\n'){
+//				if(sscanf(str,"%d %lf\n",&servo,&time) == 2){
+//					ESP_LOGI(TAG,"Servo%d,time =%lf",servo,time);
+////					ledcWrite(servo,(int)(time*0.8192));
+//					switch(servo){
+//					case 0:
+//						d.l_eye.r=time;
+//						break;
+//					case 1:
+//						d.l_eye.angle=time;
+//						break;
+//					case 2:
+//						d.r_eye.r=time;
+//						break;
+//					case 3:
+//						d.r_eye.angle=time;
+//						break;
+//					case 4:
+//						d.l_ear.angle=time;
+//						break;
+//					case 5:
+//						d.r_ear.angle=time;
+//						break;
+//					case 6:
+//						d.l_bow.angle=time;
+//						break;
+//					case 7:
+//						d.l_bow.y=time;
+//						break;
+//					case 8:
+//						d.r_bow.angle=time;
+//						break;
+//					case 9:
+//						d.r_bow.y=time;
+//						break;
+//					case 10:
+//						d.mouth.angle=time;
+//						break;
+//					}
+//					doll_set(d);
+//				}
+//				memset(str,0,sizeof(str));
+//				i=0;
+//			}
+//		}
+//		vTaskDelay(10 / portTICK_PERIOD_MS);
+//		temp=0;
+//	}
+//	vTaskDelete(NULL);
+//}
 #define adc_eye_x 35
 #define adc_eye_y 32
 #define adc_bow_angle 33
@@ -253,7 +253,7 @@ void app_main()
 	d=doll_default_setting();
 	doll_init(d);
 	//timer_setting();
-	uart=uartBegin(1, 31250, SERIAL_8N1, 23,34, 2048, 0);
+	uart=uartBegin(1, 115200, SERIAL_8N1, 23,34, 2048, 0);
 	while(1){
 		while(uartAvailable(uart)>0)
 		{
